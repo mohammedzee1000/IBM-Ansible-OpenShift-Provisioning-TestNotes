@@ -13,6 +13,7 @@ export REGISTRY_DOMAIN="registry.tt.testing"
 export PULL_SECRET_FILE="$HOME/ocp-pull-secret.json"
 export GO_GZ_URL="https://dl.google.com/go/go1.20.5.linux-s390x.tar.gz"
 export REGISTRY_IMAGE="docker.io/ibmcom/registry-s390x:2.6.2.5"
+export REGISTRY_IP="192.168.122.1"
 
 yum -y install podman httpd-tools
 
@@ -58,8 +59,8 @@ yq -i '.auths."'${REGISTRY_DOMAIN}':'${REGISTRY_PORT}'".auth="'${DISCONNECTED_SE
 yq -i  '.auths."'${REGISTRY_DOMAIN}':'${REGISTRY_PORT}'".email="testuser@example.com"'  -o json $DATA_DIR/secret/mirror.json
 
 cat > /etc/NetworkManager/dnsmasq.d/registry.conf <<EOF
-server=/tt.testing/192.168.122.1
-address=/.registry.tt.testing/192.168.122.1
+server=/tt.testing/${REGISTRY_IP}
+address=/.registry.tt.testing/${REGISTRY_IP}
 EOF
 systemctl restart NetworkManager
 
