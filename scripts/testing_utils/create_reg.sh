@@ -15,6 +15,8 @@ export GO_GZ_URL="https://dl.google.com/go/go1.20.5.linux-s390x.tar.gz"
 export REGISTRY_IMAGE="docker.io/ibmcom/registry-s390x:2.6.2.5"
 export REGISTRY_IP="192.168.122.1"
 
+[[ ! -f $PULL_SECRET_FILE ]] && echo "Please create $PULL_SECRET_FILE with your Red Hat pull secrets"
+
 yum -y install podman httpd-tools
 
 [[ -d /usr/local/go ]] && rm -rf /usr/local/go
