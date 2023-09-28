@@ -127,11 +127,11 @@ set +x
 echo
 echo "-------------CLUSTER PULL SECRET-------------"
 echo
-cat $DATA_DIR/secret/cluster.json
+cat $DATA_DIR/secret/cluster.json | yq
 echo
 echo "-------------MIRROR PULL SECRET-------------"
 echo
-cat $DATA_DIR/secret/mirror.json
+cat $DATA_DIR/secret/mirror.json | yq
 echo
 echo "-------------CA CERT-------------"
 echo
