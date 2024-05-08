@@ -14,6 +14,7 @@ export PULL_SECRET_FILE="$HOME/ocp-pull-secret.json"
 export GO_GZ_URL="https://dl.google.com/go/go1.20.5.linux-s390x.tar.gz"
 export REGISTRY_IMAGE="docker.io/ibmcom/registry-s390x:2.6.2.5"
 export REGISTRY_IP="192.168.122.1"
+export DOCKER_DIR="$HOME/.docker"
 
 [[ ! -f $PULL_SECRET_FILE ]] && echo "Please create $PULL_SECRET_FILE with your Red Hat pull secrets" && exit 1
 
@@ -41,6 +42,7 @@ rm -rf $DATA_DIR/data && mkdir -p  $DATA_DIR/data
 [[ ! -d $DATA_DIR/auth ]]& mkdir -p $DATA_DIR/auth
 [[ ! -d $DATA_DIR/certs ]] && mkdir -p $DATA_DIR/certs
 [[ ! -d $DATA_DIR/secret ]] && mkdir -p $DATA_DIR/secret
+[[ ! -d "$DOCKER_DIR" ]] && mkdir -p $DOCKER_DIR
 
 if ! cat /etc/NetworkManager/conf.d/openshift.conf | grep dnsmasq; then
 	echo -e "[main]\ndns=dnsmasq" | tee /etc/NetworkManager/conf.d/openshift.conf
@@ -59,6 +61,15 @@ cp -f $PULL_SECRET_FILE $DATA_DIR/secret/mirror.json
 yq -i '.auths."'${REGISTRY_DOMAIN}':'${REGISTRY_PORT}'"={}' -o json $DATA_DIR/secret/mirror.json
 yq -i '.auths."'${REGISTRY_DOMAIN}':'${REGISTRY_PORT}'".auth="'${DISCONNECTED_SECRET}'"' -o json $DATA_DIR/secret/mirror.json
 yq -i  '.auths."'${REGISTRY_DOMAIN}':'${REGISTRY_PORT}'".email="testuser@example.com"'  -o json $DATA_DIR/secret/mirror.json
+
+if [ ! -d "$DOCKER_DIR" ]; then
+  mkdir -p "$DOCKER_DIR"
+  cp -f $DATA_DIR/secret/mirror.json $DOCKER_DIR/config.json
+elif [ -f "$DOCKER_DIR/config.json" ]; then
+  cat "$DATA_DIR/secret/mirror.json" >> "$DOCKER_DIR/config.json"
+else
+  cp -f $DATA_DIR/secret/mirror.json $DOCKER_DIR/config.json
+fi
 
 cat > /etc/NetworkManager/dnsmasq.d/registry.conf <<EOF
 server=/tt.testing/${REGISTRY_IP}
@@ -98,7 +109,7 @@ fi
 
 pushd $DATA_DIR/certs
 [[ ! -f registry.key ]] && openssl genrsa 2048 > registry.key && chmod 440 registry.key
-[[ ! -f registry.crt ]] && openssl req -new -x509 -nodes -sha1 -days 365 -key registry.key -out registry.crt -config san.conf
+[[ ! -f registry.crt ]] && openssl req -new -x509 -nodes -sha256 -days 365 -key registry.key -out registry.crt -config san.conf
 popd
 
 cp -f $DATA_DIR/certs/registry.crt /etc/pki/ca-trust/source/anchors/
@@ -121,8 +132,8 @@ podman run --name $REGISTRY_NAME -p $REGISTRY_PORT:5000 \
 sleep 5
 curl -u $REGISTRY_USERNAME:$REGISTRY_PASSWORD https://$REGISTRY_DOMAIN:$REGISTRY_PORT/v2/_catalog
 sleep 2
-rm -rf /etc/pki/ca-trust/source/anchors/registry.crt
-update-ca-trust
+# rm -rf /etc/pki/ca-trust/source/anchors/registry.crt
+# update-ca-trust
 set +x
 echo
 echo "-------------CLUSTER PULL SECRET-------------"
