@@ -98,7 +98,7 @@ fi
 
 pushd $DATA_DIR/certs
 [[ ! -f registry.key ]] && openssl genrsa 2048 > registry.key && chmod 440 registry.key
-[[ ! -f registry.crt ]] && openssl req -new -x509 -nodes -sha1 -days 365 -key registry.key -out registry.crt -config san.conf
+[[ ! -f registry.crt ]] && openssl req -new -x509 -nodes -sha512 -days 365 -key registry.key -out registry.crt -config san.conf
 popd
 
 cp -f $DATA_DIR/certs/registry.crt /etc/pki/ca-trust/source/anchors/
